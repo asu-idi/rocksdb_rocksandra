@@ -222,6 +222,7 @@ set(JAVA_MAIN_CLASSES
   src/main/java/org/rocksdb/SstFileMetaData.java
   src/main/java/org/rocksdb/SstFileReader.java
   src/main/java/org/rocksdb/SstFileReaderIterator.java
+  src/main/java/org/rocksdb/SstFileManager.java
   src/main/java/org/rocksdb/SstFileWriter.java
   src/main/java/org/rocksdb/SstPartitionerFactory.java
   src/main/java/org/rocksdb/SstPartitionerFixedPrefixFactory.java

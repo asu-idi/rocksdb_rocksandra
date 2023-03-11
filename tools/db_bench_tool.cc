@@ -4721,6 +4721,11 @@ class Benchmark {
       options.env->LowerThreadPoolCPUPriority(Env::LOW);
       options.env->LowerThreadPoolCPUPriority(Env::HIGH);
     }
+    if (FLAGS_enable_cpu_prio) {
+      FLAGS_env->LowerThreadPoolCPUPriority(Env::LOW);
+      FLAGS_env->LowerThreadPoolCPUPriority(Env::HIGH);
+    }
+    options.env = FLAGS_env;
 
     if (FLAGS_sine_write_rate) {
       FLAGS_benchmark_write_rate_limit = static_cast<uint64_t>(SineRate(0));

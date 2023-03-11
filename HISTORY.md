@@ -1600,6 +1600,22 @@ Note: The next release will be major release 7.0. See https://github.com/faceboo
 * Added SstFileManager to the Java API to allow managing SST files across DB instances.
 
 ## 5.13.0 (2018-03-20)
+## 5.13.1 (4/30/2018)
+### New Features
+* Add `Env::LowerThreadPoolCPUPriority(Priority)` method, which lowers the CPU priority of background (esp. compaction) threads to minimize interference with foreground tasks.
+* Eliminate use of temporary directories in BackupEngine to improve reliability on distributed file systems.
+* * Introduce TTL for level compaction so that all files older than ttl go through the compaction process to get rid of old data.
+
+### Bug Fixes
+* Fsync after writing global seq number to the ingestion file in ExternalSstFileIngestionJob.
+* Fix WAL corruption caused by race condition between user write thread and FlushWAL when two_write_queue is not set.
+* Fix `BackupableDBOptions::max_valid_backups_to_open` to not delete backup files when refcount cannot be accurately determined.
+
+### Java API Changes
+* Add `BlockBasedTableConfig.setBlockCache` to allow sharing a block cache across DB instances.
+* Added SstFileManager to the Java API to allow managing SST files across DB instances.
+
+## 5.13.0 (3/20/2018)
 ### Public API Change
 * RocksDBOptionsParser::Parse()'s `ignore_unknown_options` argument will only be effective if the option file shows it is generated using a higher version of RocksDB than the current version.
 * Remove CompactionEventListener.
