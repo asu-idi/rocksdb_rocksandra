@@ -112,6 +112,7 @@ class TestCompactionFilterFactory : public CompactionFilterFactory {
 
  private:
   bool purge_ttl_on_expiration_;
+  bool ignore_range_delete_on_read_ = false;
   int32_t gc_grace_period_in_seconds_;
 };
 
@@ -130,13 +131,14 @@ class CassandraFunctionalTest : public testing::Test {
     options.merge_operator.reset(
         new CassandraValueMergeOperator(gc_grace_period_in_seconds_));
     auto* cf_factory = new TestCompactionFilterFactory(
-        purge_ttl_on_expiration_, gc_grace_period_in_seconds_);
+      purge_ttl_on_expiration_, ignore_range_delete_on_read_, gc_grace_period_in_seconds_);
     options.compaction_filter_factory.reset(cf_factory);
     EXPECT_OK(DB::Open(options, kDbName, &db));
     return std::shared_ptr<DB>(db);
   }
 
   bool purge_ttl_on_expiration_ = false;
+  bool ignore_range_delete_on_read_ = false;
   int32_t gc_grace_period_in_seconds_ = 100;
 };
 

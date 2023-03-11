@@ -363,5 +363,63 @@ RowValue RowValue::Merge(std::vector<RowValue>&& values) {
   return RowValue(std::move(columns), last_modified_time);
 }
 
+const PartitionDeletion PartitionDeletion::kDefault(kDefaultLocalDeletionTime,
+                                                    kDefaultMarkedForDeleteAt);
+const std::size_t PartitionDeletion::kSize = sizeof(int32_t) + sizeof(int64_t);
+
+PartitionDeletion::PartitionDeletion(int32_t local_deletion_time,
+                                     int64_t marked_for_delete_at)
+    : local_deletion_time_(local_deletion_time),
+      marked_for_delete_at_(marked_for_delete_at) {}
+
+std::chrono::time_point<std::chrono::system_clock>
+PartitionDeletion::MarkForDeleteAt() const {
+  return std::chrono::time_point<std::chrono::system_clock>(
+      std::chrono::microseconds(marked_for_delete_at_));
+}
+
+std::chrono::time_point<std::chrono::system_clock>
+PartitionDeletion::LocalDeletionTime() const {
+  return std::chrono::time_point<std::chrono::system_clock>(
+      std::chrono::seconds(local_deletion_time_));
+}
+
+PartitionDeletion PartitionDeletion::Deserialize(const char* src,
+                                                 std::size_t size) {
+  if (size < kSize) {
+    return PartitionDeletion::kDefault;
+  }
+
+  int32_t local_deletion_time =
+      ROCKSDB_NAMESPACE::cassandra::Deserialize<int32_t>(src, 0);
+  int64_t marked_for_delete_at =
+      ROCKSDB_NAMESPACE::cassandra::Deserialize<int64_t>(src, sizeof(int32_t));
+  return PartitionDeletion(local_deletion_time, marked_for_delete_at);
+}
+
+void PartitionDeletion::Serialize(std::string* dest) const {
+  ROCKSDB_NAMESPACE::cassandra::Serialize<int32_t>(local_deletion_time_, dest);
+  ROCKSDB_NAMESPACE::cassandra::Serialize<int64_t>(marked_for_delete_at_, dest);
+}
+
+// Merge multiple PartitionDeletion only keep latest one
+PartitionDeletion PartitionDeletion::Merge(
+    std::vector<PartitionDeletion>&& pds) {
+  assert(pds.size() > 0);
+  PartitionDeletion candidate = kDefault;
+  for (auto& deletion : pds) {
+    if (deletion.Supersedes(candidate)) {
+      candidate = deletion;
+    }
+  }
+  return candidate;
+}
+
+bool PartitionDeletion::Supersedes(PartitionDeletion& pd) const {
+  return MarkForDeleteAt() > pd.MarkForDeleteAt() ||
+         (MarkForDeleteAt() == pd.MarkForDeleteAt() &&
+          LocalDeletionTime() > pd.LocalDeletionTime());
+}
+
 }  // namespace cassandra
 }  // namespace ROCKSDB_NAMESPACE

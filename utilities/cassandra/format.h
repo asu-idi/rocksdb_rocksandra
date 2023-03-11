@@ -179,5 +179,22 @@ class RowValue {
   int64_t last_modified_time_;
 };
 
+class PartitionDeletion {
+ public:
+  PartitionDeletion(int32_t local_deletion_time, int64_t marked_for_delete_at);
+  std::chrono::time_point<std::chrono::system_clock> MarkForDeleteAt() const;
+  std::chrono::time_point<std::chrono::system_clock> LocalDeletionTime() const;
+  void Serialize(std::string* dest) const;
+  bool Supersedes(PartitionDeletion& pd) const;
+  static PartitionDeletion Merge(std::vector<PartitionDeletion>&& pds);
+  static PartitionDeletion Deserialize(const char* src, std::size_t size);
+  const static PartitionDeletion kDefault;
+  const static std::size_t kSize;
+
+ private:
+  int32_t local_deletion_time_;
+  int64_t marked_for_delete_at_;
+};
+
 }  // namespace cassandra
 }  // namespace ROCKSDB_NAMESPACE
