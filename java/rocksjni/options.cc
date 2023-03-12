@@ -1082,20 +1082,6 @@ void Java_org_rocksdb_Options_setSstFileManager(
 
 /*
  * Class:     org_rocksdb_Options
- * Method:    setSstFileManager
- * Signature: (JJ)V
- */
-void Java_org_rocksdb_Options_setSstFileManager(
-    JNIEnv* env, jobject job, jlong jhandle,
-    jlong jsst_file_manager_handle) {
-  auto* sptr_sst_file_manager =
-      reinterpret_cast<std::shared_ptr<rocksdb::SstFileManager> *>(jsst_file_manager_handle);
-  reinterpret_cast<rocksdb::Options*>(jhandle)->
-      sst_file_manager = *sptr_sst_file_manager;
-}
-
-/*
- * Class:     org_rocksdb_Options
  * Method:    setLogger
  * Signature: (JJ)V
  */
