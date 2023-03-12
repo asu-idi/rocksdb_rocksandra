@@ -45,6 +45,20 @@ class CassandraStore {
     }
   }
 
+  bool DeletePartition(const std::string& partition_key,
+                       const PartitionDeletion& deletion) {
+    std::string val;
+    deletion.Serialize(&val);
+    Slice slice(val.data(), val.size());
+    auto s = db_->Merge(write_option_, meta_cf_handle_, partition_key, slice);
+    if (s.ok()) {
+      return true;
+    } else {
+      std::cerr << "ERROR " << s.ToString() << std::endl;
+      return false;
+    }
+  }
+
   bool Put(const std::string& key, const RowValue& val) {
     std::string result;
     val.Serialize(&result);
