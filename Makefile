@@ -105,6 +105,14 @@ else
 	OPTIMIZE_LEVEL ?= -Os
 endif
 endif
+
+ifeq ($(MAKECMDGOALS),rocksdbjavastaticreleasedocker)
+        DEBUG_LEVEL=0
+endif
+
+ifeq ($(MAKECMDGOALS),rocksdbjavastaticpublish)
+	DEBUG_LEVEL=0
+endif
 # `OPTIMIZE_LEVEL` is empty when the user does not set it and `DEBUG_LEVEL=2`.
 # In that case, the compiler default (`-O0` for gcc and clang) will be used.
 OPT += $(OPTIMIZE_LEVEL)
