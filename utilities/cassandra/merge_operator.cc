@@ -8,12 +8,14 @@
 #include <assert.h>
 
 #include <memory>
+#include <assert.h>
 
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/utilities/options_type.h"
-#include "utilities/cassandra/format.h"
+#include "rocksdb/merge_operator.h"
 #include "utilities/merge_operators.h"
+#include "utilities/cassandra/format.h"
 
 namespace ROCKSDB_NAMESPACE {
 namespace cassandra {
@@ -77,6 +79,63 @@ bool CassandraValueMergeOperator::PartialMergeMulti(
   return true;
 }
 
-}  // namespace cassandra
+const char* CassandraValueMergeOperator::Name() const  {
+  return "CassandraValueMergeOperator";
+}
+
+bool CassandraPartitionMetaMergeOperator::FullMergeV2(
+    const MergeOperationInput& merge_in,
+    MergeOperationOutput* merge_out) const {
+  // Clear the *new_value for writing.
+  merge_out->new_value.clear();
+  PartitionDeletions pds;
+  pds.reserve(merge_in.operand_list.size() + (merge_in.existing_value ? 1 : 0));
+
+  if (merge_in.existing_value) {
+    for (auto& pd :
+         PartitionDeletion::Deserialize(merge_in.existing_value->data(),
+                                        merge_in.existing_value->size())) {
+      pds.push_back(std::move(pd));
+    }
+  }
+
+  for (auto& operand : merge_in.operand_list) {
+    for (auto& pd :
+         PartitionDeletion::Deserialize(operand.data(), operand.size())) {
+      pds.push_back(std::move(pd));
+    }
+  }
+
+  PartitionDeletions merged = PartitionDeletion::Merge(std::move(pds));
+  PartitionDeletion::Serialize(std::move(merged), &(merge_out->new_value));
+  return true;
+}
+
+bool CassandraPartitionMetaMergeOperator::PartialMergeMulti(
+    const Slice& /*key*/, const std::deque<Slice>& operand_list,
+    std::string* new_value, Logger* /*logger*/) const {
+  // Clear the *new_value for writing.
+  assert(new_value);
+  new_value->clear();
+
+  PartitionDeletions pds;
+  pds.reserve(operand_list.size());
+  for (auto& operand : operand_list) {
+    for (auto& pd :
+         PartitionDeletion::Deserialize(operand.data(), operand.size())) {
+      pds.push_back(std::move(pd));
+    }
+  }
+
+  PartitionDeletions merged = PartitionDeletion::Merge(std::move(pds));
+  PartitionDeletion::Serialize(std::move(merged), new_value);
+  return true;
+}
+
+const char* CassandraPartitionMetaMergeOperator::Name() const {
+  return "CassandraPartitionMetaMergeOperator";
+}
+
+} // namespace cassandra
 
 }  // namespace ROCKSDB_NAMESPACE

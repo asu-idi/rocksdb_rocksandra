@@ -13,7 +13,7 @@ public class CassandraCompactionFilter
   public CassandraCompactionFilter(boolean purgeTtlOnExpiration, boolean ignoreRangeDeleteOnRead,
       int gcGracePeriodInSeconds, int tokenLength) {
     super(createNewCassandraCompactionFilter0(
-        purgeTtlOnExpiration, ignoreRangeDeleteOnRead, gcGracePeriodInSeconds, tokenLength));
+        purgeTtlOnExpiration, ignoreRangeDeleteOnRead, gcGracePeriodInSeconds));
   }
 
   public void setMetaCfHandle(RocksDB rocksdb, ColumnFamilyHandle metaCfHandle) {
