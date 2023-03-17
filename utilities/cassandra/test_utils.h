@@ -38,9 +38,5 @@ void VerifyRowValueColumns(
 
 int64_t ToMicroSeconds(int64_t seconds);
 int32_t ToSeconds(int64_t microseconds);
-std::chrono::time_point<std::chrono::system_clock> TimePointFromSeconds(
-    int64_t t);
-std::chrono::time_point<std::chrono::system_clock> TimePointFromMicroSeconds(
-    int64_t t);
 }  // namespace cassandra
 }  // namespace ROCKSDB_NAMESPACE
