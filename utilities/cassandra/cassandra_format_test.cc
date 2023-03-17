@@ -368,7 +368,18 @@ TEST(RowValueTest, ExpireTtlShouldConvertExpiredColumnsToTombstones) {
   EXPECT_FALSE(changed);
 }
 
-EST(ParitionDeletionTest, Supersedes) {
+std::unique_ptr<PartitionDeletion> pd_make_unique(
+    const Slice& slice, int32_t local_deletion_time,
+    int64_t marked_for_delete_at) {
+  return std::unique_ptr<PartitionDeletion>(
+      new PartitionDeletion(slice, local_deletion_time, marked_for_delete_at));
+}
+
+std::unique_ptr<PartitionDeletion> pd_make_unique(const PartitionDeletion& pd) {
+  return std::unique_ptr<PartitionDeletion>(new PartitionDeletion(pd));
+}
+
+TEST(ParitionDeletionTest, Supersedes) {
   PartitionDeletion pd1(100, 100);
   PartitionDeletion pd2(100, 101);
   PartitionDeletion pd3(101, 101);
