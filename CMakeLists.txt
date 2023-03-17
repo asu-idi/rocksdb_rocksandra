@@ -896,6 +896,7 @@ set(SOURCES
         utilities/cache_dump_load.cc
         utilities/cache_dump_load_impl.cc
         utilities/cassandra/cassandra_compaction_filter.cc
+        utilities/cassandra/partition_meta_data.cc
         utilities/cassandra/format.cc
         utilities/cassandra/merge_operator.cc
         utilities/checkpoint/checkpoint_impl.cc
@@ -1443,6 +1444,7 @@ if(WITH_TESTS)
         utilities/backup/backup_engine_test.cc
         utilities/blob_db/blob_db_test.cc
         utilities/cassandra/cassandra_functional_test.cc
+        utilities/cassandra/cassandra_partition_meta_data_test.cc
         utilities/cassandra/cassandra_format_test.cc
         utilities/cassandra/cassandra_row_merge_test.cc
         utilities/cassandra/cassandra_serialize_test.cc

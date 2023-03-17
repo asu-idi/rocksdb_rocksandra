@@ -83,6 +83,7 @@ const char* CassandraValueMergeOperator::Name() const  {
   return "CassandraValueMergeOperator";
 }
 
+
 bool CassandraPartitionMetaMergeOperator::FullMergeV2(
     const MergeOperationInput& merge_in,
     MergeOperationOutput* merge_out) const {
