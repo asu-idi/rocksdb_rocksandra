@@ -54,6 +54,7 @@ set(JNI_NATIVE_SOURCES
         rocksjni/rocks_callback_object.cc
         rocksjni/cassandra_compactionfilterjni.cc
         rocksjni/cassandra_value_operator.cc
+        rocksjni/cassandra_partition_meta_datajni.cc
         rocksjni/cassandra_partition_meta_merge_operator.cc
         rocksjni/restorejni.cc
         rocksjni/rocksdb_exception_test.cc
@@ -108,6 +109,7 @@ set(NATIVE_JAVA_CLASSES
         org.rocksdb.Cache
         org.rocksdb.CassandraCompactionFilter
         org.rocksdb.CassandraValueMergeOperator
+        org.rocksdb.CassandraPartitionMetaData
         org.rocksdb.CassandraPartitionMetaMergeOperator
         org.rocksdb.Checkpoint
         org.rocksdb.ClockCache
@@ -203,6 +205,7 @@ set(JAVA_MAIN_CLASSES
   src/main/java/org/rocksdb/Cache.java
   src/main/java/org/rocksdb/CassandraCompactionFilter.java
   src/main/java/org/rocksdb/CassandraValueMergeOperator.java
+  src/main/java/org/rocksdb/CassandraPartitionMetaData.java
   src/main/java/org/rocksdb/CassandraPartitionMetaMergeOperator.java
   src/main/java/org/rocksdb/Checkpoint.java
   src/main/java/org/rocksdb/ChecksumType.java

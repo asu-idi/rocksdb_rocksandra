@@ -31,6 +31,50 @@ class CassandraStore {
     assert(db);
   }
 
+  explicit CassandraStore(bool purge_ttl_on_expiration = false,
+                          int32_t gc_grace_period_in_seconds = 100,
+                          bool ignore_range_delete_on_read = false,
+                          size_t token_length = 3) {
+    token_length_ = token_length;
+    data_compaction_filter_ = new CassandraCompactionFilter(
+        purge_ttl_on_expiration, ignore_range_delete_on_read,
+        gc_grace_period_in_seconds);
+    Options options;
+    options.create_if_missing = true;
+    options.create_missing_column_families = true;
+
+    ColumnFamilyOptions data_cf_options;
+    data_cf_options.compaction_filter = data_compaction_filter_;
+    data_cf_options.merge_operator.reset(
+        new CassandraValueMergeOperator(gc_grace_period_in_seconds));
+
+    ColumnFamilyOptions meta_cf_options;
+    meta_cf_options.merge_operator.reset(
+        new CassandraPartitionMetaMergeOperator());
+
+    std::vector<ColumnFamilyDescriptor> column_families;
+    column_families.emplace_back("default", data_cf_options);
+    column_families.emplace_back("meta", meta_cf_options);
+
+    std::vector<ColumnFamilyHandle*> cf_handles;
+    Status status =
+        DB::Open(options, kDbName, column_families, &cf_handles, &db_);
+    assert(status.ok());
+    assert(cf_handles.size() == 2);
+    data_cf_handle_ = cf_handles.at(0);
+    meta_cf_handle_ = cf_handles.at(1);
+    meta_data_ = new PartitionMetaData(db_, meta_cf_handle_, token_length);
+    data_compaction_filter_->SetPartitionMetaData(meta_data_);
+  }
+
+  ~CassandraStore() {
+    delete meta_data_;
+    delete data_cf_handle_;
+    delete meta_cf_handle_;
+    delete db_;
+    delete data_compaction_filter_;
+  }
+
   bool Append(const std::string& key, const RowValue& val) {
     std::string result;
     val.Serialize(&result);
@@ -48,17 +92,8 @@ class CassandraStore {
   bool DeletePartition(const std::string& partition_key_with_token,
                        int32_t local_deletion_time,
                        int64_t marked_for_delete_at) {
-    Slice token(partition_key_with_token.data(), token_length_);
-    Slice partition_key(partition_key_with_token.data() + token_length_,
-                        partition_key_with_token.size() - token_length_);
-    PartitionDeletions pds;
-    pds.push_back(std::unique_ptr<PartitionDeletion>(new PartitionDeletion(
-        partition_key, local_deletion_time, marked_for_delete_at)));
-    std::string val;
-    PartitionDeletion::Serialize(std::move(pds), &val);
-    Slice valslice(val.data(), val.size());
-
-    auto s = db_->Merge(write_option_, meta_cf_handle_, token, valslice);
+    auto s = meta_data_->DeletePartition(
+        partition_key_with_token, local_deletion_time, marked_for_delete_at);
     if (s.ok()) {
       return true;
     } else {
@@ -111,6 +146,10 @@ class CassandraStore {
 
  private:
   std::shared_ptr<DB> db_;
+  CassandraCompactionFilter* data_compaction_filter_;
+  ColumnFamilyHandle* data_cf_handle_;
+  ColumnFamilyHandle* meta_cf_handle_;
+  PartitionMetaData* meta_data_;
   WriteOptions write_option_;
   ReadOptions get_option_;
   size_t token_length_;

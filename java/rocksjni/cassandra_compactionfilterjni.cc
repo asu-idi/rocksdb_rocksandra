@@ -26,19 +26,17 @@ jlong Java_org_rocksdb_CassandraCompactionFilter_createNewCassandraCompactionFil
 
 /*
  * Class:     org_rocksdb_CassandraCompactionFilter
- * Method:    setMetaCfHandle
+ * Method:    setPartitionMetaData
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL
-Java_org_rocksdb_CassandraCompactionFilter_setMetaCfHandle(
+Java_org_rocksdb_CassandraCompactionFilter_setPartitionMetaData(
     JNIEnv* /*env*/, jclass /*jcls*/, jlong compaction_filter_pointer,
-    jlong rocksdb_pointer, jlong meta_cf_handle_pointer) {
+    jlong meta_data_pointer) {
   auto* compaction_filter =
       reinterpret_cast<rocksdb::cassandra::CassandraCompactionFilter*>(
           compaction_filter_pointer);
-  auto* db = reinterpret_cast<rocksdb::DB*>(rocksdb_pointer);
-  auto* meta_cf_handle =
-      reinterpret_cast<rocksdb::ColumnFamilyHandle*>(meta_cf_handle_pointer);
-
-  compaction_filter->SetMetaCfHandle(db, meta_cf_handle);
+  auto* meta_data = reinterpret_cast<rocksdb::cassandra::PartitionMetaData*>(
+      meta_data_pointer);
+  compaction_filter->SetPartitionMetaData(meta_data);
 }

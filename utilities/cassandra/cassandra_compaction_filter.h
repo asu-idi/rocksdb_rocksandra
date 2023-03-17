@@ -11,6 +11,7 @@
 #include "rocksdb/db.h"
 #include "rocksdb/slice.h"
 #include "utilities/cassandra/format.h"
+#include "utilities/cassandra/partition_meta_data.h"
 #include "utilities/cassandra/cassandra_options.h"
 
 namespace ROCKSDB_NAMESPACE {
@@ -32,18 +33,23 @@ namespace cassandra {
  *
  */
 class CassandraCompactionFilter : public CompactionFilter {
- public:
-  explicit CassandraCompactionFilter(bool purge_ttl_on_expiration,
+public:
+ explicit CassandraCompactionFilter(bool purge_ttl_on_expiration,
                                      int32_t gc_grace_period_in_seconds);
-  static const char* kClassName() { return "CassandraCompactionFilter"; }
-  const char* Name() const override;
+ static const char* kClassName() { return "CassandraCompactionFilter"; }
+ const char* Name() const override;
 
-  virtual Decision FilterV2(int level, const Slice& key, ValueType value_type,
-                            const Slice& existing_value, std::string* new_value,
-                            std::string* skip_until) const override;
+ virtual Decision FilterV2(int level, const Slice& key, ValueType value_type,
+                           const Slice& existing_value, std::string* new_value,
+                           std::string* skip_until) const override;
+ void SetPartitionMetaData(PartitionMetaData* meta_data);
 
- private:
+private:
   CassandraOptions options_;
+  bool purge_ttl_on_expiration_;
+  bool ignore_range_delete_on_read_;
+  std::chrono::seconds gc_grace_period_;
+  std::atomic<PartitionMetaData*> partition_meta_data_;
   bool ShouldDropByParitionDelete(
       const Slice& key,
       std::chrono::time_point<std::chrono::system_clock> row_timestamp) const;

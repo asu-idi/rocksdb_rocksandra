@@ -37,6 +37,11 @@ CassandraCompactionFilter::CassandraCompactionFilter(
   RegisterOptions(&options_, &cassandra_filter_type_info);
 }
 
+void CassandraCompactionFilter::SetPartitionMetaData(
+    PartitionMetaData* meta_data) {
+  partition_meta_data_ = meta_data;
+}
+
 bool CassandraCompactionFilter::ShouldDropByParitionDelete(
     const Slice& key,
     std::chrono::time_point<std::chrono::system_clock> row_timestamp) const {
@@ -52,8 +57,6 @@ bool CassandraCompactionFilter::ShouldDropByParitionDelete(
 
   return pd != nullptr &&
          pd->MarkForDeleteAt() > row_timestamp + gc_grace_period;
-  return GetPartitionDelete(key).MarkForDeleteAt() >
-         row_timestamp + gc_grace_period;
 }
 
 CompactionFilter::Decision CassandraCompactionFilter::FilterV2(
