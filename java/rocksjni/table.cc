@@ -48,24 +48,24 @@ jlong Java_org_rocksdb_PlainTableConfig_newTableFactoryHandle(
  * Signature: (ZZZZBBDBZJJJJIIIJZZZJZZIIZZBJIJI)J
  */
 jlong Java_org_rocksdb_BlockBasedTableConfig_newTableFactoryHandle(
-    JNIEnv *, jobject, jboolean jcache_index_and_filter_blocks,
-    jboolean jcache_index_and_filter_blocks_with_high_priority,
-    jboolean jpin_l0_filter_and_index_blocks_in_cache,
-    jboolean jpin_top_level_index_and_filter, jbyte jindex_type_value,
-    jbyte jdata_block_index_type_value,
-    jdouble jdata_block_hash_table_util_ratio, jbyte jchecksum_type_value,
-    jboolean jno_block_cache, jlong jblock_cache_handle,
-    jlong jpersistent_cache_handle, jlong jblock_cache_compressed_handle,
-    jlong jblock_size, jint jblock_size_deviation, jint jblock_restart_interval,
-    jint jindex_block_restart_interval, jlong jmetadata_block_size,
-    jboolean jpartition_filters, jboolean joptimize_filters_for_memory,
-    jboolean juse_delta_encoding, jlong jfilter_policy_handle,
-    jboolean jwhole_key_filtering, jboolean jverify_compression,
-    jint jread_amp_bytes_per_bit, jint jformat_version,
-    jboolean jenable_index_compression, jboolean jblock_align,
-    jbyte jindex_shortening, jlong jblock_cache_size,
-    jint jblock_cache_num_shard_bits, jlong jblock_cache_compressed_size,
-    jint jblock_cache_compressed_num_shard_bits) {
+     JNIEnv *, jobject, jboolean jcache_index_and_filter_blocks,
+     jboolean jcache_index_and_filter_blocks_with_high_priority,
+     jboolean jpin_l0_filter_and_index_blocks_in_cache,
+     jboolean jpin_top_level_index_and_filter, jbyte jindex_type_value,
+     jbyte jdata_block_index_type_value,
+     jdouble jdata_block_hash_table_util_ratio, jbyte jchecksum_type_value,
+     jboolean jno_block_cache, jlong jblock_cache_handle,
+     jlong jpersistent_cache_handle, jlong jblock_cache_compressed_handle,
+     jlong jblock_size, jint jblock_size_deviation, jint jblock_restart_interval,
+     jint jindex_block_restart_interval, jlong jmetadata_block_size,
+     jboolean jpartition_filters, jboolean joptimize_filters_for_memory,
+     jboolean juse_delta_encoding, jlong jfilter_policy_handle,
+     jboolean jwhole_key_filtering, jboolean jverify_compression,
+     jint jread_amp_bytes_per_bit, jint jformat_version,
+     jboolean jenable_index_compression, jboolean jblock_align,
+     jbyte jindex_shortening, jlong jblock_cache_size,
+     jint jblock_cache_num_shard_bits, jlong jblock_cache_compressed_size,
+     jint jblock_cache_compressed_num_shard_bits) {
   ROCKSDB_NAMESPACE::BlockBasedTableOptions options;
   options.cache_index_and_filter_blocks =
       static_cast<bool>(jcache_index_and_filter_blocks);
@@ -85,13 +85,13 @@ jlong Java_org_rocksdb_BlockBasedTableConfig_newTableFactoryHandle(
   options.checksum = ROCKSDB_NAMESPACE::ChecksumTypeJni::toCppChecksumType(
       jchecksum_type_value);
   options.no_block_cache = static_cast<bool>(jno_block_cache);
-  if (options.no_block_cache) {
-    options.block_cache = nullptr;
-  } else {
-    if (jblock_cache_handle > 0) {
-      std::shared_ptr<ROCKSDB_NAMESPACE::Cache> *pCache =
-          reinterpret_cast<std::shared_ptr<ROCKSDB_NAMESPACE::Cache> *>(
-              jblock_cache_handle);
+   if (options.no_block_cache) {
+     options.block_cache = nullptr;
+   } else {
+     if (jblock_cache_handle > 0) {
+       std::shared_ptr<ROCKSDB_NAMESPACE::Cache> *pCache =
+           reinterpret_cast<std::shared_ptr<ROCKSDB_NAMESPACE::Cache> *>(
+               jblock_cache_handle);
       options.block_cache = *pCache;
     } else if (jblock_cache_size >= 0) {
       if (jblock_cache_num_shard_bits > 0) {
@@ -128,6 +128,9 @@ jlong Java_org_rocksdb_BlockBasedTableConfig_newTableFactoryHandle(
           static_cast<size_t>(jblock_cache_compressed_size));
     }
   }
+  options.checksum = static_cast<rocksdb::ChecksumType>(jchecksum_type);
+  options.index_type =
+      static_cast<rocksdb::BlockBasedTableOptions::IndexType>(jindex_type);
   options.block_size = static_cast<size_t>(jblock_size);
   options.block_size_deviation = static_cast<int>(jblock_size_deviation);
   options.block_restart_interval = static_cast<int>(jblock_restart_interval);

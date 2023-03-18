@@ -2719,6 +2719,35 @@ jlongArray Java_org_rocksdb_RocksDB_getApproximateSizes(
     return nullptr;
   }
 
+/*
+ * Class:     org_rocksdb_RocksDB
+ * Method:    getAggregatedLongProperty
+ * Signature: (JLjava/lang/String;I)J
+ */
+jlong Java_org_rocksdb_RocksDB_getAggregatedLongProperty(
+    JNIEnv* env, jobject, jlong db_handle, jstring jproperty, jint jproperty_len) {
+  const char* property = env->GetStringUTFChars(jproperty, nullptr);
+  if (property == nullptr) {
+    return 0;
+  }
+  ROCKSDB_NAMESPACE::Slice property_slice(property, jproperty_len);
+  auto* db = reinterpret_cast<ROCKSDB_NAMESPACE::DB*>(db_handle);
+  uint64_t property_value = 0;
+  bool retCode = db->GetAggregatedIntProperty(property_slice, &property_value);
+  env->ReleaseStringUTFChars(jproperty, property);
+
+  if (retCode) {
+    return property_value;
+  }
+
+  ROCKSDB_NAMESPACE::RocksDBExceptionJni::ThrowNew(env, ROCKSDB_NAMESPACE::Status::NotFound());
+  return 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// rocksdb::DB::Flush
+
   auto ranges = std::unique_ptr<ROCKSDB_NAMESPACE::Range[]>(
       new ROCKSDB_NAMESPACE::Range[range_count]);
   size_t range_offset = 0;
