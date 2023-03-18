@@ -368,6 +368,29 @@ TEST(RowValueTest, ExpireTtlShouldConvertExpiredColumnsToTombstones) {
   EXPECT_FALSE(changed);
 }
 
+TEST(DeletionTimeTest, Supersedes) {
+  DeletionTime t1(100, 100);
+  DeletionTime t2(100, 101);
+  DeletionTime t3(101, 101);
+  EXPECT_TRUE(t2.Supersedes(t1));
+  EXPECT_TRUE(t3.Supersedes(t2));
+  EXPECT_TRUE(t3.Supersedes(t1));
+  EXPECT_TRUE(t1.Supersedes(DeletionTime::kLive));
+}
+
+TEST(DeletionTimeTest, Equality) {
+  EXPECT_EQ(DeletionTime(100, 101), DeletionTime(100, 101));
+  EXPECT_NE(DeletionTime(100, 101), DeletionTime(100, 102));
+  EXPECT_NE(DeletionTime(100, 101), DeletionTime(99, 101));
+}
+
+TEST(DeletionTimeTest, Serialization) {
+  DeletionTime t(100, 101);
+  std::string val;
+  t.Serialize(&val);
+  EXPECT_EQ(DeletionTime::Deserialize(val.data()), t);
+}
+
 std::unique_ptr<PartitionDeletion> pd_make_unique(
     const Slice& slice, int32_t local_deletion_time,
     int64_t marked_for_delete_at) {

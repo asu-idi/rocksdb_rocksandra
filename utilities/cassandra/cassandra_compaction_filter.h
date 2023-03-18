@@ -34,7 +34,7 @@ namespace cassandra {
  */
 class CassandraCompactionFilter : public CompactionFilter {
 public:
- explicit CassandraCompactionFilter(bool purge_ttl_on_expiration,
+  explicit CassandraCompactionFilter(bool purge_ttl_on_expiration,
                                      int32_t gc_grace_period_in_seconds);
  static const char* kClassName() { return "CassandraCompactionFilter"; }
  const char* Name() const override;
