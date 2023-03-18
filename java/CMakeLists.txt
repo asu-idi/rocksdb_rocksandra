@@ -132,6 +132,7 @@ set(NATIVE_JAVA_CLASSES
         org.rocksdb.IngestExternalFileOptions
         org.rocksdb.Logger
         org.rocksdb.LRUCache
+        org.rocksdb.MemoryUtil
         org.rocksdb.MemTableConfig
         org.rocksdb.MergeOperator
         org.rocksdb.NativeComparatorWrapper
