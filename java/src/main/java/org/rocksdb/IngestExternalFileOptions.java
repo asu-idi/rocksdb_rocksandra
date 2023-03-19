@@ -201,13 +201,10 @@ public class IngestExternalFileOptions extends RocksObject {
     return this;
   }
 
-  public boolean ingestBehind() {
-    return ingestBehind(nativeHandle_);
-  }
-
-  public void setIngestBehind(final boolean ingestBehind) {
-    setIngestBehind(nativeHandle_, ingestBehind);
-  }
+// Tanmesh
+//  public void setIngestBehind(final boolean ingestBehind) {
+//    setIngestBehind(nativeHandle_, ingestBehind);
+//  }
 
   private native static long newIngestExternalFileOptions();
   private native static long newIngestExternalFileOptions(
@@ -229,7 +226,6 @@ public class IngestExternalFileOptions extends RocksObject {
   private native boolean ingestBehind(final long handle);
   private native void setIngestBehind(final long handle,
       final boolean ingestBehind);
-  @Override protected final native void disposeInternal(final long handle);
   private native boolean writeGlobalSeqno(final long handle);
   private native void setWriteGlobalSeqno(final long handle,
       final boolean writeGlobalSeqNo);

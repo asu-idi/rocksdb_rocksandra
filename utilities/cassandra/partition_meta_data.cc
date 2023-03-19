@@ -7,27 +7,28 @@
 
 namespace ROCKSDB_NAMESPACE {
 namespace cassandra {
-//std::unique_ptr<PartitionDeletion> PartitionMetaData::GetPartitionDelete(
-//    const Slice& key) const {
-//  if (key.size() < token_length_) {
-//    return nullptr;
-//  }
-//
-//  Slice token(key.data(), token_length_);
-//  Slice key_wo_token(key.data() + token_length_, key.size() - token_length_);
-//  std::string val;
-//
-//  if (db_->Get(read_options_, meta_cf_handle_, token, &val).ok()) {
-//    PartitionDeletions pds =
-//        PartitionDeletion::Deserialize(val.data(), val.size());
-//    for (auto& pd : pds) {
-//      if (key_wo_token.starts_with(pd->PartitionKey())) {
-//        return std::move(pd);
-//      }
-//    }
-//  }
-//  return nullptr;
-//}
+
+PartitionMetaData::PartitionMetaData(DB* db, ColumnFamilyHandle* meta_cf_handle,
+                                     size_t token_length)
+    : db_(db),
+      meta_cf_handle_(meta_cf_handle),
+      token_length_(token_length),
+      enable_bloom_(false),
+      bloom_(6, nullptr) {
+  read_options_.ignore_range_deletions = true;
+};
+
+Status PartitionMetaData::EnableBloomFilter(uint32_t bloom_total_bits) {
+  bloom_.SetTotalBits(&arena_, bloom_total_bits, 0, 0, nullptr);
+  rocksdb::Iterator* it = db_->NewIterator(read_options_, meta_cf_handle_);
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+    bloom_.Add(it->key());
+  }
+  Status result = it->status();
+  delete it;
+  enable_bloom_ = true;
+  return result;
+}
 
 DeletionTime PartitionMetaData::GetDeletionTime(const Slice& row_key) const {
     if (row_key.size() < token_length_) {
