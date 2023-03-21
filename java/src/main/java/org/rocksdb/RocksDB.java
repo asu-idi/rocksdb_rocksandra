@@ -1396,6 +1396,10 @@ public class RocksDB extends RocksObject {
         endKey.length);
   }
 
+  public void deleteFilesInRange(final byte[] beginKey, final byte[] endKey) throws RocksDBException {
+    deleteFilesInRange(nativeHandle_, beginKey, 0, beginKey.length, endKey, 0, endKey.length);
+  }
+
   /**
    * Removes the database entries in the range ["beginKey", "endKey"), i.e.,
    * including "beginKey" and excluding "endKey". a non-OK status on error. It
@@ -4445,6 +4449,9 @@ public class RocksDB extends RocksObject {
   private native void deleteRange(final long handle, final byte[] beginKey,
       final int beginKeyOffset, final int beginKeyLength, final byte[] endKey,
       final int endKeyOffset, final int endKeyLength) throws RocksDBException;
+  private native void deleteFilesInRange(long handle, byte[] beginKey,
+      int beginKeyOffset, int beginKeyLength, byte[] endKey, int endKeyOffset,
+      int endKeyLength) throws RocksDBException;
   private native void deleteRange(final long handle, final byte[] beginKey,
       final int beginKeyOffset, final int beginKeyLength, final byte[] endKey,
       final int endKeyOffset, final int endKeyLength, final long cfHandle)
