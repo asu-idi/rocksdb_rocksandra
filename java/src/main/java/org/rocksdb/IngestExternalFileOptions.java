@@ -201,11 +201,6 @@ public class IngestExternalFileOptions extends RocksObject {
     return this;
   }
 
-// Tanmesh
-//  public void setIngestBehind(final boolean ingestBehind) {
-//    setIngestBehind(nativeHandle_, ingestBehind);
-//  }
-
   private native static long newIngestExternalFileOptions();
   private native static long newIngestExternalFileOptions(
       final boolean moveFiles, final boolean snapshotConsistency,

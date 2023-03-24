@@ -4555,28 +4555,10 @@ public class RocksDB extends RocksObject {
   private native int getDirect(long handle, long readOptHandle, ByteBuffer key, int keyOffset,
       int keyLength, ByteBuffer value, int valueOffset, int valueLength, long cfHandle)
       throws RocksDBException;
-//  Tanmesh: kept Private deleteRange method
-//  protected native void deleteRange(long handle, long writeOptHandle, byte[] beginKey,
-//      int beginKeyOffset, int beginKeyLength, byte[] endKey, int endKeyOffset, int endKeyLength,
-//      long cfHandle) throws RocksDBException;
   protected native String getProperty0(long nativeHandle,
       String property, int propertyLength) throws RocksDBException;
   protected native String getProperty0(long nativeHandle, long cfHandle,
       String property, int propertyLength) throws RocksDBException;
-//  Tanmesh:
-//  protected native long getLongProperty(long nativeHandle, String property,
-//      int propertyLength) throws RocksDBException;
-//  protected native long getLongProperty(long nativeHandle, long cfHandle,
-//      String property, int propertyLength) throws RocksDBException;
-//  protected native long getAggregatedLongProperty(long nativeHandle, String property,
-//      int propertyLength) throws RocksDBException;
-//  protected native long iterator(long handle);
-//  protected native long iterator(long handle, long readOptHandle);
-//  protected native long iteratorCF(long handle, long cfHandle);
-//  protected native long iteratorCF(long handle, long cfHandle,
-//      long readOptHandle);
-//  protected native long[] iterators(final long handle,
-//      final long[] columnFamilyHandles, final long readOptHandle);
   private native boolean keyMayExistDirect(final long handle, final long cfHhandle,
       final long readOptHandle, final ByteBuffer key, final int keyOffset, final int keyLength);
   private native int[] keyMayExistDirectFoundValue(final long handle, final long cfHhandle,
