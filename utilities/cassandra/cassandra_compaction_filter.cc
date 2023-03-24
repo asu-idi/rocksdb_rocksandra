@@ -17,7 +17,6 @@ namespace ROCKSDB_NAMESPACE {
 namespace cassandra {
 static std::unordered_map<std::string, OptionTypeInfo>
     cassandra_filter_type_info = {
-#ifndef ROCKSDB_LITE
         {"purge_ttl_on_expiration",
          {offsetof(struct CassandraOptions, purge_ttl_on_expiration),
           OptionType::kBoolean, OptionVerificationType::kNormal,
@@ -26,8 +25,11 @@ static std::unordered_map<std::string, OptionTypeInfo>
          {offsetof(struct CassandraOptions, gc_grace_period_in_seconds),
           OptionType::kUInt32T, OptionVerificationType::kNormal,
           OptionTypeFlags::kNone}},
-#endif  // ROCKSDB_LITE
 };
+
+const char* CassandraCompactionFilter::Name() const {
+  return "CassandraCompactionFilter";
+}
 
 CassandraCompactionFilter::CassandraCompactionFilter(
     bool purge_ttl_on_expiration, int32_t gc_grace_period_in_seconds)
@@ -35,13 +37,38 @@ CassandraCompactionFilter::CassandraCompactionFilter(
   RegisterOptions(&options_, &cassandra_filter_type_info);
 }
 
+void CassandraCompactionFilter::SetPartitionMetaData(
+    PartitionMetaData* meta_data) {
+  partition_meta_data_ = meta_data;
+}
+
+bool CassandraCompactionFilter::ShouldDropByParitionDelete(
+    const Slice& key,
+    std::chrono::time_point<std::chrono::system_clock> row_timestamp) const {
+  if (!partition_meta_data_) {
+    // skip triming when parition meta db is not ready yet
+    return false;
+  }
+
+  std::chrono::seconds gc_grace_period =
+      ignore_range_delete_on_read_ ? std::chrono::seconds(0) : gc_grace_period_;
+  PartitionMetaData* meta_data = partition_meta_data_.load();
+  DeletionTime deletion_time = meta_data->GetDeletionTime(key);
+  return deletion_time.MarkForDeleteAt() > row_timestamp + gc_grace_period;
+}
+
 CompactionFilter::Decision CassandraCompactionFilter::FilterV2(
-    int /*level*/, const Slice& /*key*/, ValueType value_type,
+    int /*level*/, const Slice& key, ValueType value_type,
     const Slice& existing_value, std::string* new_value,
     std::string* /*skip_until*/) const {
   bool value_changed = false;
-  RowValue row_value =
-      RowValue::Deserialize(existing_value.data(), existing_value.size());
+  RowValue row_value = RowValue::Deserialize(
+    existing_value.data(), existing_value.size());
+
+  if (ShouldDropByParitionDelete(key, row_value.LastModifiedTimePoint())) {
+    return Decision::kRemove;
+  }
+
   RowValue compacted =
       options_.purge_ttl_on_expiration
           ? row_value.RemoveExpiredColumns(&value_changed)
@@ -77,34 +104,5 @@ CassandraCompactionFilterFactory::CreateCompactionFilter(
   return result;
 }
 
-#ifndef ROCKSDB_LITE
-int RegisterCassandraObjects(ObjectLibrary& library,
-                             const std::string& /*arg*/) {
-  library.AddFactory<MergeOperator>(
-      CassandraValueMergeOperator::kClassName(),
-      [](const std::string& /*uri*/, std::unique_ptr<MergeOperator>* guard,
-         std::string* /* errmsg */) {
-        guard->reset(new CassandraValueMergeOperator(0));
-        return guard->get();
-      });
-  library.AddFactory<CompactionFilter>(
-      CassandraCompactionFilter::kClassName(),
-      [](const std::string& /*uri*/,
-         std::unique_ptr<CompactionFilter>* /*guard */,
-         std::string* /* errmsg */) {
-        return new CassandraCompactionFilter(false, 0);
-      });
-  library.AddFactory<CompactionFilterFactory>(
-      CassandraCompactionFilterFactory::kClassName(),
-      [](const std::string& /*uri*/,
-         std::unique_ptr<CompactionFilterFactory>* guard,
-         std::string* /* errmsg */) {
-        guard->reset(new CassandraCompactionFilterFactory(false, 0));
-        return guard->get();
-      });
-  size_t num_types;
-  return static_cast<int>(library.GetFactoryCount(&num_types));
-}
-#endif  // ROCKSDB_LITE
 }  // namespace cassandra
 }  // namespace ROCKSDB_NAMESPACE

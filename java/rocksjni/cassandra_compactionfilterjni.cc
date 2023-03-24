@@ -23,3 +23,20 @@ jlong Java_org_rocksdb_CassandraCompactionFilter_createNewCassandraCompactionFil
   // set the native handle to our native compaction filter
   return GET_CPLUSPLUS_POINTER(compaction_filter);
 }
+
+/*
+ * Class:     org_rocksdb_CassandraCompactionFilter
+ * Method:    setPartitionMetaData
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL
+Java_org_rocksdb_CassandraCompactionFilter_setPartitionMetaData(
+    JNIEnv* /*env*/, jclass /*jcls*/, jlong compaction_filter_pointer,
+    jlong meta_data_pointer) {
+  auto* compaction_filter =
+      reinterpret_cast<rocksdb::cassandra::CassandraCompactionFilter*>(
+          compaction_filter_pointer);
+  auto* meta_data = reinterpret_cast<rocksdb::cassandra::PartitionMetaData*>(
+      meta_data_pointer);
+  compaction_filter->SetPartitionMetaData(meta_data);
+}

@@ -4,6 +4,7 @@
 //  (found in the LICENSE.Apache file in the root directory).
 
 #pragma once
+#include <chrono>
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/slice.h"
 #include "utilities/cassandra/cassandra_options.h"
@@ -27,7 +28,7 @@ class CassandraValueMergeOperator : public MergeOperator {
                                  std::string* new_value,
                                  Logger* logger) const override;
 
-  const char* Name() const override { return kClassName(); }
+  const char* Name() const override;
   static const char* kClassName() { return "CassandraValueMergeOperator"; }
 
   virtual bool AllowSingleOperand() const override { return true; }
@@ -40,5 +41,24 @@ class CassandraValueMergeOperator : public MergeOperator {
  private:
   CassandraOptions options_;
 };
+
+/**
+ * A MergeOperator implements Cassandra partition meta data merge.
+ */
+class CassandraPartitionMetaMergeOperator : public MergeOperator {
+ public:
+  explicit CassandraPartitionMetaMergeOperator(){};
+
+  virtual bool FullMergeV2(const MergeOperationInput& merge_in,
+                           MergeOperationOutput* merge_out) const override;
+
+  virtual bool PartialMergeMulti(const Slice& key,
+                                 const std::deque<Slice>& operand_list,
+                                 std::string* new_value,
+                                 Logger* logger) const override;
+
+  virtual const char* Name() const override;
+};
+
 }  // namespace cassandra
 }  // namespace ROCKSDB_NAMESPACE

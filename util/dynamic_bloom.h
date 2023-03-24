@@ -48,6 +48,13 @@ class DynamicBloom {
                         uint32_t num_probes = 6, size_t huge_page_tlb_size = 0,
                         Logger* logger = nullptr);
 
+  explicit DynamicBloom(uint32_t num_probes = 6,
+                        uint32_t (*hash_func)(const Slice& key) = nullptr);
+
+  void SetTotalBits(Allocator* allocator, uint32_t total_bits,
+                    uint32_t locality, size_t huge_page_tlb_size,
+                    Logger* logger);
+
   ~DynamicBloom() {}
 
   // Assuming single threaded access to this function.

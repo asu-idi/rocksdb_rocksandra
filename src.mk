@@ -255,6 +255,7 @@ LIB_SOURCES =                                                   \
   utilities/cache_dump_load.cc                                  \
   utilities/cache_dump_load_impl.cc                             \
   utilities/cassandra/cassandra_compaction_filter.cc            \
+  utilities/cassandra/partition_meta_data.cc                    \
   utilities/cassandra/format.cc                                 \
   utilities/cassandra/merge_operator.cc                         \
   utilities/checkpoint/checkpoint_impl.cc                       \
@@ -589,6 +590,7 @@ TEST_MAIN_SOURCES =                                                     \
   utilities/blob_db/blob_db_test.cc                                     \
   utilities/cassandra/cassandra_format_test.cc                          \
   utilities/cassandra/cassandra_functional_test.cc                      \
+  utilities/cassandra/cassandra_partition_meta_data_test.cc             \
   utilities/cassandra/cassandra_row_merge_test.cc                       \
   utilities/cassandra/cassandra_serialize_test.cc                       \
   utilities/checkpoint/checkpoint_test.cc                               \
@@ -666,6 +668,8 @@ JNI_NATIVE_SOURCES =                                          \
   java/rocksjni/remove_emptyvalue_compactionfilterjni.cc      \
   java/rocksjni/cassandra_compactionfilterjni.cc              \
   java/rocksjni/cassandra_value_operator.cc                   \
+  java/rocksjni/cassandra_partition_meta_datajni.cc           \
+  java/rocksjni/cassandra_partition_meta_merge_operator.cc    \
   java/rocksjni/restorejni.cc                                 \
   java/rocksjni/rocks_callback_object.cc                      \
   java/rocksjni/rocksjni.cc                                   \

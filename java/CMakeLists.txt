@@ -52,6 +52,11 @@ set(JNI_NATIVE_SOURCES
         rocksjni/remove_emptyvalue_compactionfilterjni.cc
         rocksjni/restorejni.cc
         rocksjni/rocks_callback_object.cc
+        rocksjni/cassandra_compactionfilterjni.cc
+        rocksjni/cassandra_value_operator.cc
+        rocksjni/cassandra_partition_meta_datajni.cc
+        rocksjni/cassandra_partition_meta_merge_operator.cc
+        rocksjni/restorejni.cc
         rocksjni/rocksdb_exception_test.cc
         rocksjni/rocksjni.cc
         rocksjni/slice.cc
@@ -84,7 +89,92 @@ set(JNI_NATIVE_SOURCES
         rocksjni/writebatchhandlerjnicallback.cc
         rocksjni/write_batch_test.cc
         rocksjni/write_batch_with_index.cc
+        rocksjni/writebatchhandlerjnicallback.cc
         rocksjni/write_buffer_manager.cc
+)
+
+set(NATIVE_JAVA_CLASSES
+        org.rocksdb.AbstractCompactionFilter
+        org.rocksdb.AbstractCompactionFilterFactory
+        org.rocksdb.AbstractImmutableNativeReference
+        org.rocksdb.AbstractNativeReference
+        org.rocksdb.AbstractRocksIterator
+        org.rocksdb.AbstractSlice
+        org.rocksdb.AbstractWriteBatch
+        org.rocksdb.BackupableDBOptions
+        org.rocksdb.BackupEngine
+        org.rocksdb.BackupEngineTest
+        org.rocksdb.BlockBasedTableConfig
+        org.rocksdb.BloomFilter
+        org.rocksdb.Cache
+        org.rocksdb.CassandraCompactionFilter
+        org.rocksdb.CassandraValueMergeOperator
+        org.rocksdb.CassandraPartitionMetaData
+        org.rocksdb.CassandraPartitionMetaMergeOperator
+        org.rocksdb.Checkpoint
+        org.rocksdb.ClockCache
+        org.rocksdb.ColumnFamilyHandle
+        org.rocksdb.ColumnFamilyOptions
+        org.rocksdb.CompactionOptionsFIFO
+        org.rocksdb.CompactionOptionsUniversal
+        org.rocksdb.Comparator
+        org.rocksdb.ComparatorOptions
+        org.rocksdb.CompressionOptions
+        org.rocksdb.DBOptions
+        org.rocksdb.DirectComparator
+        org.rocksdb.DirectSlice
+        org.rocksdb.Env
+        org.rocksdb.EnvOptions
+        org.rocksdb.Filter
+        org.rocksdb.FlushOptions
+        org.rocksdb.HashLinkedListMemTableConfig
+        org.rocksdb.HashSkipListMemTableConfig
+        org.rocksdb.IngestExternalFileOptions
+        org.rocksdb.Logger
+        org.rocksdb.LRUCache
+        org.rocksdb.MemoryUtil
+        org.rocksdb.MemTableConfig
+        org.rocksdb.MergeOperator
+        org.rocksdb.NativeComparatorWrapper
+        org.rocksdb.NativeComparatorWrapperTest.NativeStringComparatorWrapper
+        org.rocksdb.NativeLibraryLoader
+        org.rocksdb.Options
+        org.rocksdb.OptionsUtil
+        org.rocksdb.PlainTableConfig
+        org.rocksdb.RateLimiter
+        org.rocksdb.ReadOptions
+        org.rocksdb.RemoveEmptyValueCompactionFilter
+        org.rocksdb.RestoreOptions
+        org.rocksdb.RocksCallbackObject
+        org.rocksdb.RocksDB
+        org.rocksdb.RocksDBExceptionTest
+        org.rocksdb.RocksEnv
+        org.rocksdb.RocksIterator
+        org.rocksdb.RocksIteratorInterface
+        org.rocksdb.RocksMemEnv
+        org.rocksdb.RocksMutableObject
+        org.rocksdb.RocksObject
+        org.rocksdb.SkipListMemTableConfig
+        org.rocksdb.Slice
+        org.rocksdb.Snapshot
+        org.rocksdb.SnapshotTest
+        org.rocksdb.SstFileManager
+        org.rocksdb.SstFileWriter
+        org.rocksdb.Statistics
+        org.rocksdb.StringAppendOperator
+        org.rocksdb.TableFormatConfig
+        org.rocksdb.TransactionLogIterator
+        org.rocksdb.TtlDB
+        org.rocksdb.VectorMemTableConfig
+        org.rocksdb.WBWIRocksIterator
+        org.rocksdb.WriteBatch
+        org.rocksdb.WriteBatch.Handler
+        org.rocksdb.WriteBatchTest
+        org.rocksdb.WriteBatchTestInternalHelper
+        org.rocksdb.WriteBatchWithIndex
+        org.rocksdb.WriteOptions
+        org.rocksdb.util.CapturingWriteBatchHandler
+        org.rocksdb.util.WriteBatchGetter
 )
 
 set(JAVA_MAIN_CLASSES
@@ -116,6 +206,8 @@ set(JAVA_MAIN_CLASSES
   src/main/java/org/rocksdb/Cache.java
   src/main/java/org/rocksdb/CassandraCompactionFilter.java
   src/main/java/org/rocksdb/CassandraValueMergeOperator.java
+  src/main/java/org/rocksdb/CassandraPartitionMetaData.java
+  src/main/java/org/rocksdb/CassandraPartitionMetaMergeOperator.java
   src/main/java/org/rocksdb/Checkpoint.java
   src/main/java/org/rocksdb/ChecksumType.java
   src/main/java/org/rocksdb/ClockCache.java
@@ -222,6 +314,7 @@ set(JAVA_MAIN_CLASSES
   src/main/java/org/rocksdb/SstFileMetaData.java
   src/main/java/org/rocksdb/SstFileReader.java
   src/main/java/org/rocksdb/SstFileReaderIterator.java
+  src/main/java/org/rocksdb/SstFileManager.java
   src/main/java/org/rocksdb/SstFileWriter.java
   src/main/java/org/rocksdb/SstPartitionerFactory.java
   src/main/java/org/rocksdb/SstPartitionerFixedPrefixFactory.java

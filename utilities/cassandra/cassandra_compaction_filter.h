@@ -4,39 +4,55 @@
 //  (found in the LICENSE.Apache file in the root directory).
 
 #pragma once
+#include <atomic>
 #include <string>
 
 #include "rocksdb/compaction_filter.h"
+#include "rocksdb/db.h"
 #include "rocksdb/slice.h"
+#include "utilities/cassandra/format.h"
+#include "utilities/cassandra/partition_meta_data.h"
 #include "utilities/cassandra/cassandra_options.h"
 
 namespace ROCKSDB_NAMESPACE {
 namespace cassandra {
 
 /**
- * Compaction filter for removing expired Cassandra data with ttl.
+ * Compaction filter for removing expired/deleted Cassandra data.
+ *
  * If option `purge_ttl_on_expiration` is set to true, expired data
  * will be directly purged. Otherwise expired data will be converted
  * tombstones first, then be eventally removed after gc grace period.
  * `purge_ttl_on_expiration` should only be on in the case all the
  * writes have same ttl setting, otherwise it could bring old data back.
  *
- * Compaction filter is also in charge of removing tombstone that has been
- * promoted to kValue type after serials of merging in compaction.
+ * If option `ignore_range_tombstone_on_read` is set to true, when client
+ * care more about disk space releasing and not what would be read after
+ * range/partition, we will drop deleted data more aggressively without
+ * considering gc grace period.
+ *
  */
 class CassandraCompactionFilter : public CompactionFilter {
- public:
+public:
   explicit CassandraCompactionFilter(bool purge_ttl_on_expiration,
                                      int32_t gc_grace_period_in_seconds);
-  static const char* kClassName() { return "CassandraCompactionFilter"; }
-  const char* Name() const override { return kClassName(); }
+ static const char* kClassName() { return "CassandraCompactionFilter"; }
+ const char* Name() const override;
 
-  virtual Decision FilterV2(int level, const Slice& key, ValueType value_type,
-                            const Slice& existing_value, std::string* new_value,
-                            std::string* skip_until) const override;
+ virtual Decision FilterV2(int level, const Slice& key, ValueType value_type,
+                           const Slice& existing_value, std::string* new_value,
+                           std::string* skip_until) const override;
+ void SetPartitionMetaData(PartitionMetaData* meta_data);
 
- private:
+private:
   CassandraOptions options_;
+  bool purge_ttl_on_expiration_;
+  bool ignore_range_delete_on_read_;
+  std::chrono::seconds gc_grace_period_;
+  std::atomic<PartitionMetaData*> partition_meta_data_;
+  bool ShouldDropByParitionDelete(
+      const Slice& key,
+      std::chrono::time_point<std::chrono::system_clock> row_timestamp) const;
 };
 
 class CassandraCompactionFilterFactory : public CompactionFilterFactory {
@@ -48,9 +64,9 @@ class CassandraCompactionFilterFactory : public CompactionFilterFactory {
   std::unique_ptr<CompactionFilter> CreateCompactionFilter(
       const CompactionFilter::Context& context) override;
   static const char* kClassName() { return "CassandraCompactionFilterFactory"; }
-  const char* Name() const override { return kClassName(); }
+  const char* Name() const override;
 
- private:
+private:
   CassandraOptions options_;
 };
 }  // namespace cassandra

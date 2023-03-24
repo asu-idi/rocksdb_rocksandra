@@ -410,6 +410,18 @@ public interface DBOptionsInterface<T extends DBOptionsInterface<T>> {
   long deleteObsoleteFilesPeriodMicros();
 
   /**
+   * Suggested number of concurrent background compaction jobs, submitted to
+   * the default LOW priority thread pool.
+   * Default: 1
+   *
+   * @param baseBackgroundCompactions Suggested number of background compaction
+   *     jobs
+   *
+   * @deprecated Use {@link #setMaxBackgroundJobs(int)}
+   */
+  void setBaseBackgroundCompactions(int baseBackgroundCompactions);
+
+  /**
    * This value represents the maximum number of threads that will
    * concurrently perform a compaction job by breaking it into multiple,
    * smaller ones that are run simultaneously.

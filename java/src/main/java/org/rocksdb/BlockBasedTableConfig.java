@@ -985,15 +985,15 @@ public class BlockBasedTableConfig extends TableFormatConfig {
     }
 
     return newTableFactoryHandle(cacheIndexAndFilterBlocks,
-        cacheIndexAndFilterBlocksWithHighPriority, pinL0FilterAndIndexBlocksInCache,
-        pinTopLevelIndexAndFilter, indexType.getValue(), dataBlockIndexType.getValue(),
-        dataBlockHashTableUtilRatio, checksumType.getValue(), noBlockCache, blockCacheHandle,
-        persistentCacheHandle, blockCacheCompressedHandle, blockSize, blockSizeDeviation,
-        blockRestartInterval, indexBlockRestartInterval, metadataBlockSize, partitionFilters,
-        optimizeFiltersForMemory, useDeltaEncoding, filterPolicyHandle, wholeKeyFiltering,
-        verifyCompression, readAmpBytesPerBit, formatVersion, enableIndexCompression, blockAlign,
-        indexShortening.getValue(), blockCacheSize, blockCacheNumShardBits,
-        blockCacheCompressedSize, blockCacheCompressedNumShardBits);
+            cacheIndexAndFilterBlocksWithHighPriority, pinL0FilterAndIndexBlocksInCache,
+            pinTopLevelIndexAndFilter, indexType.getValue(), dataBlockIndexType.getValue(),
+            dataBlockHashTableUtilRatio, checksumType.getValue(), noBlockCache, blockCacheHandle,
+            persistentCacheHandle, blockCacheCompressedHandle, blockSize, blockSizeDeviation,
+            blockRestartInterval, indexBlockRestartInterval, metadataBlockSize, partitionFilters,
+            optimizeFiltersForMemory, useDeltaEncoding, filterPolicyHandle, wholeKeyFiltering,
+            verifyCompression, readAmpBytesPerBit, formatVersion, enableIndexCompression, blockAlign,
+            indexShortening.getValue(), blockCacheSize, blockCacheNumShardBits,
+            blockCacheCompressedSize, blockCacheCompressedNumShardBits);
   }
 
   private native long newTableFactoryHandle(final boolean cacheIndexAndFilterBlocks,
@@ -1044,7 +1044,6 @@ public class BlockBasedTableConfig extends TableFormatConfig {
   private boolean enableIndexCompression;
   private boolean blockAlign;
   private IndexShorteningMode indexShortening;
-
   // NOTE: ONLY used if blockCache == null
   @Deprecated private long blockCacheSize;
   @Deprecated private int blockCacheNumShardBits;

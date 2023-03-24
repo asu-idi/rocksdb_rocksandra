@@ -1396,6 +1396,10 @@ public class RocksDB extends RocksObject {
         endKey.length);
   }
 
+  public void deleteFilesInRange(final byte[] beginKey, final byte[] endKey) throws RocksDBException {
+    deleteFilesInRange(nativeHandle_, beginKey, 0, beginKey.length, endKey, 0, endKey.length);
+  }
+
   /**
    * Removes the database entries in the range ["beginKey", "endKey"), i.e.,
    * including "beginKey" and excluding "endKey". a non-OK status on error. It
@@ -4445,6 +4449,9 @@ public class RocksDB extends RocksObject {
   private native void deleteRange(final long handle, final byte[] beginKey,
       final int beginKeyOffset, final int beginKeyLength, final byte[] endKey,
       final int endKeyOffset, final int endKeyLength) throws RocksDBException;
+  private native void deleteFilesInRange(long handle, byte[] beginKey,
+      int beginKeyOffset, int beginKeyLength, byte[] endKey, int endKeyOffset,
+      int endKeyLength) throws RocksDBException;
   private native void deleteRange(final long handle, final byte[] beginKey,
       final int beginKeyOffset, final int beginKeyLength, final byte[] endKey,
       final int endKeyOffset, final int endKeyLength, final long cfHandle)
@@ -4548,6 +4555,10 @@ public class RocksDB extends RocksObject {
   private native int getDirect(long handle, long readOptHandle, ByteBuffer key, int keyOffset,
       int keyLength, ByteBuffer value, int valueOffset, int valueLength, long cfHandle)
       throws RocksDBException;
+  protected native String getProperty0(long nativeHandle,
+      String property, int propertyLength) throws RocksDBException;
+  protected native String getProperty0(long nativeHandle, long cfHandle,
+      String property, int propertyLength) throws RocksDBException;
   private native boolean keyMayExistDirect(final long handle, final long cfHhandle,
       final long readOptHandle, final ByteBuffer key, final int keyOffset, final int keyLength);
   private native int[] keyMayExistDirectFoundValue(final long handle, final long cfHhandle,

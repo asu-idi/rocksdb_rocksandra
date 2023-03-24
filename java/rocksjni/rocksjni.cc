@@ -2719,6 +2719,10 @@ jlongArray Java_org_rocksdb_RocksDB_getApproximateSizes(
     return nullptr;
   }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// rocksdb::DB::Flush
+
   auto ranges = std::unique_ptr<ROCKSDB_NAMESPACE::Range[]>(
       new ROCKSDB_NAMESPACE::Range[range_count]);
   size_t range_offset = 0;

@@ -31,12 +31,69 @@ class CassandraStore {
     assert(db);
   }
 
+  explicit CassandraStore(bool purge_ttl_on_expiration = false,
+                          int32_t gc_grace_period_in_seconds = 100,
+                          bool ignore_range_delete_on_read = false,
+                          size_t token_length = 3) {
+    token_length_ = token_length;
+    data_compaction_filter_ = new CassandraCompactionFilter(
+        purge_ttl_on_expiration, ignore_range_delete_on_read,
+        gc_grace_period_in_seconds);
+    Options options;
+    options.create_if_missing = true;
+    options.create_missing_column_families = true;
+
+    ColumnFamilyOptions data_cf_options;
+    data_cf_options.compaction_filter = data_compaction_filter_;
+    data_cf_options.merge_operator.reset(
+        new CassandraValueMergeOperator(gc_grace_period_in_seconds));
+
+    ColumnFamilyOptions meta_cf_options;
+    meta_cf_options.merge_operator.reset(
+        new CassandraPartitionMetaMergeOperator());
+
+    std::vector<ColumnFamilyDescriptor> column_families;
+    column_families.emplace_back("default", data_cf_options);
+    column_families.emplace_back("meta", meta_cf_options);
+
+    std::vector<ColumnFamilyHandle*> cf_handles;
+    Status status =
+        DB::Open(options, kDbName, column_families, &cf_handles, &db_);
+    assert(status.ok());
+    assert(cf_handles.size() == 2);
+    data_cf_handle_ = cf_handles.at(0);
+    meta_cf_handle_ = cf_handles.at(1);
+    meta_data_ = new PartitionMetaData(db_, meta_cf_handle_, token_length);
+    data_compaction_filter_->SetPartitionMetaData(meta_data_);
+  }
+
+  ~CassandraStore() {
+    delete meta_data_;
+    delete data_cf_handle_;
+    delete meta_cf_handle_;
+    delete db_;
+    delete data_compaction_filter_;
+  }
+
   bool Append(const std::string& key, const RowValue& val) {
     std::string result;
     val.Serialize(&result);
     Slice valSlice(result.data(), result.size());
     auto s = db_->Merge(write_option_, key, valSlice);
 
+    if (s.ok()) {
+      return true;
+    } else {
+      std::cerr << "ERROR " << s.ToString() << std::endl;
+      return false;
+    }
+  }
+
+  bool DeletePartition(const std::string& partition_key_with_token,
+                       int32_t local_deletion_time,
+                       int64_t marked_for_delete_at) {
+    auto s = meta_data_->DeletePartition(
+        partition_key_with_token, local_deletion_time, marked_for_delete_at);
     if (s.ok()) {
       return true;
     } else {
@@ -89,8 +146,13 @@ class CassandraStore {
 
  private:
   std::shared_ptr<DB> db_;
+  CassandraCompactionFilter* data_compaction_filter_;
+  ColumnFamilyHandle* data_cf_handle_;
+  ColumnFamilyHandle* meta_cf_handle_;
+  PartitionMetaData* meta_data_;
   WriteOptions write_option_;
   ReadOptions get_option_;
+  size_t token_length_;
 
   DBImpl* dbfull() { return static_cast_with_check<DBImpl>(db_.get()); }
 };
@@ -112,6 +174,7 @@ class TestCompactionFilterFactory : public CompactionFilterFactory {
 
  private:
   bool purge_ttl_on_expiration_;
+  bool ignore_range_delete_on_read_ = false;
   int32_t gc_grace_period_in_seconds_;
 };
 
@@ -130,13 +193,14 @@ class CassandraFunctionalTest : public testing::Test {
     options.merge_operator.reset(
         new CassandraValueMergeOperator(gc_grace_period_in_seconds_));
     auto* cf_factory = new TestCompactionFilterFactory(
-        purge_ttl_on_expiration_, gc_grace_period_in_seconds_);
+      purge_ttl_on_expiration_, ignore_range_delete_on_read_, gc_grace_period_in_seconds_);
     options.compaction_filter_factory.reset(cf_factory);
     EXPECT_OK(DB::Open(options, kDbName, &db));
     return std::shared_ptr<DB>(db);
   }
 
   bool purge_ttl_on_expiration_ = false;
+  bool ignore_range_delete_on_read_ = false;
   int32_t gc_grace_period_in_seconds_ = 100;
 };
 
@@ -147,14 +211,14 @@ TEST_F(CassandraFunctionalTest, SimpleMergeTest) {
   int64_t now = time(nullptr);
 
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue({
           CreateTestColumnSpec(kTombstone, 0, ToMicroSeconds(now + 5)),
           CreateTestColumnSpec(kColumn, 1, ToMicroSeconds(now + 8)),
           CreateTestColumnSpec(kExpiringColumn, 2, ToMicroSeconds(now + 5)),
       }));
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue({
           CreateTestColumnSpec(kColumn, 0, ToMicroSeconds(now + 2)),
           CreateTestColumnSpec(kExpiringColumn, 1, ToMicroSeconds(now + 5)),
@@ -162,7 +226,7 @@ TEST_F(CassandraFunctionalTest, SimpleMergeTest) {
           CreateTestColumnSpec(kExpiringColumn, 7, ToMicroSeconds(now + 17)),
       }));
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue({
           CreateTestColumnSpec(kExpiringColumn, 0, ToMicroSeconds(now + 6)),
           CreateTestColumnSpec(kTombstone, 1, ToMicroSeconds(now + 5)),
@@ -170,7 +234,7 @@ TEST_F(CassandraFunctionalTest, SimpleMergeTest) {
           CreateTestColumnSpec(kTombstone, 11, ToMicroSeconds(now + 11)),
       }));
 
-  auto ret = store.Get("k1");
+  auto ret = store.Get("t0-k1");
 
   ASSERT_TRUE(std::get<0>(ret));
   RowValue& merged = std::get<1>(ret);
@@ -195,7 +259,7 @@ TEST_F(CassandraFunctionalTest,
   int64_t now = time(nullptr);
 
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue(
           {CreateTestColumnSpec(kExpiringColumn, 0,
                                 ToMicroSeconds(now - kTtl - 20)),  // expired
@@ -207,7 +271,7 @@ TEST_F(CassandraFunctionalTest,
   ASSERT_OK(store.Flush());
 
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue(
           {CreateTestColumnSpec(kExpiringColumn, 0,
                                 ToMicroSeconds(now - kTtl - 10)),  // expired
@@ -216,7 +280,7 @@ TEST_F(CassandraFunctionalTest,
   ASSERT_OK(store.Flush());
   ASSERT_OK(store.Compact());
 
-  auto ret = store.Get("k1");
+  auto ret = store.Get("t0-k1");
   ASSERT_TRUE(std::get<0>(ret));
   RowValue& merged = std::get<1>(ret);
   EXPECT_EQ(merged.get_columns().size(), 4);
@@ -237,7 +301,7 @@ TEST_F(CassandraFunctionalTest,
   int64_t now = time(nullptr);
 
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue(
           {CreateTestColumnSpec(kExpiringColumn, 0,
                                 ToMicroSeconds(now - kTtl - 20)),  // expired
@@ -248,7 +312,7 @@ TEST_F(CassandraFunctionalTest,
   ASSERT_OK(store.Flush());
 
   store.Append(
-      "k1",
+      "t0-k1",
       CreateTestRowValue(
           {CreateTestColumnSpec(kExpiringColumn, 0,
                                 ToMicroSeconds(now - kTtl - 10)),  // expired
@@ -257,7 +321,7 @@ TEST_F(CassandraFunctionalTest,
   ASSERT_OK(store.Flush());
   ASSERT_OK(store.Compact());
 
-  auto ret = store.Get("k1");
+  auto ret = store.Get("t0-k1");
   ASSERT_TRUE(std::get<0>(ret));
   RowValue& merged = std::get<1>(ret);
   EXPECT_EQ(merged.get_columns().size(), 3);
@@ -275,19 +339,21 @@ TEST_F(CassandraFunctionalTest,
   CassandraStore store(OpenDb());
   int64_t now = time(nullptr);
 
-  store.Append("k1", CreateTestRowValue({
-                         CreateTestColumnSpec(kExpiringColumn, 0,
-                                              ToMicroSeconds(now - kTtl - 20)),
-                         CreateTestColumnSpec(kExpiringColumn, 1,
-                                              ToMicroSeconds(now - kTtl - 20)),
-                     }));
+  store.Append("t0-k1",
+               CreateTestRowValue({
+                   CreateTestColumnSpec(kExpiringColumn, 0,
+                                        ToMicroSeconds(now - kTtl - 20)),
+                   CreateTestColumnSpec(kExpiringColumn, 1,
+                                        ToMicroSeconds(now - kTtl - 20)),
+               }));
 
   ASSERT_OK(store.Flush());
 
-  store.Append("k1", CreateTestRowValue({
-                         CreateTestColumnSpec(kExpiringColumn, 0,
-                                              ToMicroSeconds(now - kTtl - 10)),
-                     }));
+  store.Append("t0-k1",
+               CreateTestRowValue({
+                   CreateTestColumnSpec(kExpiringColumn, 0,
+                                        ToMicroSeconds(now - kTtl - 10)),
+               }));
 
   ASSERT_OK(store.Flush());
   ASSERT_OK(store.Compact());
@@ -300,26 +366,27 @@ TEST_F(CassandraFunctionalTest,
   CassandraStore store(OpenDb());
   int64_t now = time(nullptr);
 
-  store.Append("k1",
+  store.Append("t0-k1",
                CreateTestRowValue(
                    {CreateTestColumnSpec(
                         kTombstone, 0,
                         ToMicroSeconds(now - gc_grace_period_in_seconds_ - 1)),
                     CreateTestColumnSpec(kColumn, 1, ToMicroSeconds(now))}));
 
-  store.Append("k2", CreateTestRowValue({CreateTestColumnSpec(
-                         kColumn, 0, ToMicroSeconds(now))}));
+  store.Append("t0-k2", CreateTestRowValue({CreateTestColumnSpec(
+                            kColumn, 0, ToMicroSeconds(now))}));
 
   ASSERT_OK(store.Flush());
 
-  store.Append("k1", CreateTestRowValue({
-                         CreateTestColumnSpec(kColumn, 1, ToMicroSeconds(now)),
-                     }));
+  store.Append("t0-k1",
+               CreateTestRowValue({
+                   CreateTestColumnSpec(kColumn, 1, ToMicroSeconds(now)),
+               }));
 
   ASSERT_OK(store.Flush());
   ASSERT_OK(store.Compact());
 
-  auto ret = store.Get("k1");
+  auto ret = store.Get("t0-k1");
   ASSERT_TRUE(std::get<0>(ret));
   RowValue& gced = std::get<1>(ret);
   EXPECT_EQ(gced.get_columns().size(), 1);

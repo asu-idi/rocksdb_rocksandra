@@ -381,6 +381,41 @@ class PosixEnv : public CompositeEnv {
     thread_pools_[pool].LowerCPUPriority(CpuPriority::kLow);
   }
 
+  virtual std::string TimeToString(uint64_t secondsSince1970) override {
+    const time_t seconds = (time_t)secondsSince1970;
+    struct tm t;
+    int maxsize = 64;
+    std::string dummy;
+    dummy.reserve(maxsize);
+    dummy.resize(maxsize);
+    char* p = &dummy[0];
+    localtime_r(&seconds, &t);
+    snprintf(p, maxsize,
+             "%04d/%02d/%02d-%02d:%02d:%02d ",
+             t.tm_year + 1900,
+             t.tm_mon + 1,
+             t.tm_mday,
+             t.tm_hour,
+             t.tm_min,
+             t.tm_sec);
+    return dummy;
+  }
+
+  EnvOptions OptimizeForLogWrite(const EnvOptions& env_options,
+                                 const DBOptions& db_options) const override {
+    EnvOptions optimized = env_options;
+    optimized.use_mmap_writes = false;
+    optimized.use_direct_writes = false;
+    optimized.bytes_per_sync = db_options.wal_bytes_per_sync;
+    // TODO(icanadi) it's faster if fallocate_with_keep_size is false, but it
+    // breaks TransactionLogIteratorStallAtLastRecord unit test. Fix the unit
+    // test and make this false
+    optimized.fallocate_with_keep_size = true;
+    optimized.writable_file_max_buffer_size =
+        db_options.writable_file_max_buffer_size;
+    return optimized;
+  }
+
   Status LowerThreadPoolCPUPriority(Priority pool, CpuPriority pri) override {
     assert(pool >= Priority::BOTTOM && pool <= Priority::HIGH);
     thread_pools_[pool].LowerCPUPriority(pri);

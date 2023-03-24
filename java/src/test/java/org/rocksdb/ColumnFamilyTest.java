@@ -377,18 +377,25 @@ public class ColumnFamilyTest {
          final RocksDB db = RocksDB.open(options,
              dbFolder.getRoot().getAbsolutePath(),
              cfDescriptors, columnFamilyHandleList)) {
-      assertThat(db.getProperty("rocksdb.estimate-num-keys")).isNotNull();
-      assertThat(db.getLongProperty(columnFamilyHandleList.get(0), "rocksdb.estimate-num-keys"))
-          .isGreaterThanOrEqualTo(0);
-      assertThat(db.getProperty("rocksdb.stats")).isNotNull();
-      assertThat(db.getProperty(columnFamilyHandleList.get(0), "rocksdb.sstables")).isNotNull();
-      assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.estimate-num-keys"))
-          .isNotNull();
-      assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.stats")).isNotNull();
-      assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.sstables")).isNotNull();
-      assertThat(db.getAggregatedLongProperty("rocksdb.estimate-num-keys")).isNotNull();
-      assertThat(db.getAggregatedLongProperty("rocksdb.estimate-num-keys"))
-          .isGreaterThanOrEqualTo(0);
+      try {
+        assertThat(db.getProperty("rocksdb.estimate-num-keys")).isNotNull();
+        assertThat(db.getLongProperty(columnFamilyHandleList.get(0), "rocksdb.estimate-num-keys"))
+            .isGreaterThanOrEqualTo(0);
+        assertThat(db.getProperty("rocksdb.stats")).isNotNull();
+        assertThat(db.getProperty(columnFamilyHandleList.get(0), "rocksdb.sstables")).isNotNull();
+        assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.estimate-num-keys"))
+            .isNotNull();
+        assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.stats")).isNotNull();
+        assertThat(db.getProperty(columnFamilyHandleList.get(1), "rocksdb.sstables")).isNotNull();
+        assertThat(db.getAggregatedLongProperty("rocksdb.estimate-num-keys")).isNotNull();
+        assertThat(db.getAggregatedLongProperty("rocksdb.estimate-num-keys"))
+            .isGreaterThanOrEqualTo(0);
+      } finally {
+        for (final ColumnFamilyHandle columnFamilyHandle :
+            columnFamilyHandleList) {
+          columnFamilyHandle.close();
+        }
+      }
     }
   }
 
